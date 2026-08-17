@@ -144,23 +144,23 @@ pipeline {
         }
     }
 
-    post {
+  post {
 
-        success {
+    success {
 
-            emailext(
-                subject: "SUCCESS: Flask CI/CD Pipeline - Build #${BUILD_NUMBER}",
+        emailext(
+            subject: "SUCCESS: Flask CI/CD Pipeline - Build #${env.BUILD_NUMBER}",
 
-                body: """
+            body: """
 CI/CD Pipeline completed successfully.
 
-Build Number: ${BUILD_NUMBER}
+Build Number: ${env.BUILD_NUMBER}
 
 Commit SHA:
-${GIT_COMMIT}
+${env.GIT_COMMIT ?: 'N/A'}
 
 Docker Image:
-${IMAGE_NAME}:${IMAGE_TAG}
+${env.IMAGE_NAME}:${env.IMAGE_TAG ?: 'N/A'}
 
 Deployment:
 SUCCESS
@@ -171,25 +171,25 @@ PASSED
 The Flask application is running successfully on EC2.
 """,
 
-                to: 'dhikalerahul.rd@gmail.com'
-            )
-        }
+            to: 'dhikalerahul.rd@gmail.com'
+        )
+    }
 
-        failure {
+    failure {
 
-            emailext(
-                subject: "FAILED: Flask CI/CD Pipeline - Build #${BUILD_NUMBER}",
+        emailext(
+            subject: "FAILED: Flask CI/CD Pipeline - Build #${env.BUILD_NUMBER}",
 
-                body: """
+            body: """
 CI/CD Pipeline FAILED.
 
-Build Number: ${BUILD_NUMBER}
+Build Number: ${env.BUILD_NUMBER}
 
 Commit SHA:
-${GIT_COMMIT}
+${env.GIT_COMMIT ?: 'N/A'}
 
 Docker Image:
-${IMAGE_NAME}:${IMAGE_TAG}
+${env.IMAGE_NAME}:${env.IMAGE_TAG ?: 'N/A'}
 
 Deployment:
 FAILED
@@ -198,8 +198,7 @@ Please check the Jenkins console output
 to identify the failed stage.
 """,
 
-                to: 'dhikalerahul.rd@gmail.com'
-            )
-        }
+            to: 'dhikalerahul.rd@gmail.com'
+        )
     }
 }
