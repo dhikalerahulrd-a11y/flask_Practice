@@ -17,16 +17,20 @@ pipeline {
             }
         }
 
-       stage('Install') {
+      stage('Install') {
     steps {
         sh '''
-            rm -rf venv
+            echo "=== OS ==="
+            cat /etc/os-release
 
+            echo "=== Python ==="
+            python3 --version
+
+            echo "=== Python path ==="
+            which python3
+
+            echo "=== Create venv ==="
             python3 -m venv venv
-
-            ./venv/bin/python -m pip install --upgrade pip
-
-            ./venv/bin/pip install -r requirements.txt
         '''
     }
 }
