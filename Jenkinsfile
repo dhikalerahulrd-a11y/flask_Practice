@@ -26,15 +26,6 @@ pipeline {
             }
         }
 
-      stage('Install') {
-    steps {
-        sh '''
-            echo "=== OS ==="
-            cat /etc/os-release
-
-            echo "=== Python ==="
-            python3 --version
-
         stage('Install') {
             steps {
                 sh '''
@@ -42,7 +33,7 @@ pipeline {
 
                     python3 -m venv venv
 
-                    ./venv/bin/python -m pip install --upgrade pip
+ (Fix Python virtual environment in Jenkins pipeline)
 
                     ./venv/bin/pip install -r requirements.txt
                 '''
@@ -57,23 +48,6 @@ pipeline {
             }
         }
 
-
-            echo "=== Python path ==="
-            which python3
-
-            echo "=== Create venv ==="
-            python3 -m venv venv
-        '''
-    }
-}
-
-      stage('Test') {
-    steps {
-        sh '''
-            ./venv/bin/pytest
-        '''
-    }
-}
         stage('Build') {
             steps {
                 script {
