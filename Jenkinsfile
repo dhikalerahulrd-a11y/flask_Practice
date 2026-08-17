@@ -7,15 +7,10 @@ pipeline {
     }
 
     environment {
-        AWS_REGION = 'ap-south-1'
-
+        AWS_REGION     = 'ap-south-1'
         ECR_REPOSITORY = 'flask-practice'
-
-        ECR_REGISTRY =
-            '916080963016.dkr.ecr.ap-south-1.amazonaws.com'
-
-        IMAGE_NAME =
-            "${ECR_REGISTRY}/${ECR_REPOSITORY}"
+        ECR_REGISTRY   = '916080963016.dkr.ecr.ap-south-1.amazonaws.com'
+        IMAGE_NAME     = "${ECR_REGISTRY}/${ECR_REPOSITORY}"
     }
 
     stages {
@@ -29,6 +24,8 @@ pipeline {
         stage('Install') {
             steps {
                 sh '''
+                    set -e
+
                     rm -rf venv
 
                     python3 -m venv venv
@@ -43,6 +40,8 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
+                    set -e
+
                     ./venv/bin/pytest
                 '''
             }
@@ -57,11 +56,13 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    echo "Image tag: ${IMAGE_TAG}"
+                    echo "Image tag: ${env.IMAGE_TAG}"
 
                     sh """
+                        set -e
+
                         docker build \
-                        -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                            -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} .
                     """
                 }
             }
@@ -72,18 +73,20 @@ pipeline {
 
                 withCredentials([
                     [$class: 'AmazonWebServicesCredentialsBinding',
-                     credentialsId: 'aws-credentials']
+                     credentialsId: 'rd-aws-credentials']
                 ]) {
 
                     sh """
+                        set -e
+
                         aws ecr get-login-password \
-                            --region ${AWS_REGION} | \
+                            --region ${env.AWS_REGION} | \
                         docker login \
                             --username AWS \
-                            --password-stdin ${ECR_REGISTRY}
+                            --password-stdin ${env.ECR_REGISTRY}
 
                         docker push \
-                            ${IMAGE_NAME}:${IMAGE_TAG}
+                            ${env.IMAGE_NAME}:${env.IMAGE_TAG}
                     """
                 }
             }
@@ -92,31 +95,34 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
 
-                sshagent(['ec2-ssh-key']) {
+                sshagent(['rd-ec2-ssh-key']) {
 
                     sh """
+                        set -e
+
                         ssh -o StrictHostKeyChecking=no \
                             ec2-user@15.206.165.57 '
+                                set -e
 
-                            aws ecr get-login-password \
-                                --region ${AWS_REGION} | \
-                            docker login \
-                                --username AWS \
-                                --password-stdin ${ECR_REGISTRY}
+                                aws ecr get-login-password \
+                                    --region ${env.AWS_REGION} | \
+                                docker login \
+                                    --username AWS \
+                                    --password-stdin ${env.ECR_REGISTRY}
 
-                            docker pull \
-                                ${IMAGE_NAME}:${IMAGE_TAG}
+                                docker pull \
+                                    ${env.IMAGE_NAME}:${env.IMAGE_TAG}
 
-                            docker stop flask-app || true
+                                docker stop flask-app || true
 
-                            docker rm flask-app || true
+                                docker rm flask-app || true
 
-                            docker run -d \
-                                --name flask-app \
-                                --restart unless-stopped \
-                                -p 5000:5000 \
-                                ${IMAGE_NAME}:${IMAGE_TAG}
-                        '
+                                docker run -d \
+                                    --name flask-app \
+                                    --restart unless-stopped \
+                                    -p 5000:5000 \
+                                    ${env.IMAGE_NAME}:${env.IMAGE_TAG}
+                            '
                     """
                 }
             }
@@ -126,6 +132,9 @@ pipeline {
             steps {
 
                 sh '''
+                    set -e
+
+                    echo "Waiting for Flask application..."
                     sleep 10
 
                     curl --fail \
