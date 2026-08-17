@@ -17,23 +17,27 @@ pipeline {
             }
         }
 
-        stage('Install') {
-            steps {
-                sh '''
-                    python3 -m pip install --upgrade pip
-                    pip3 install -r requirements.txt
-                '''
-            }
-        }
+       stage('Install') {
+    steps {
+        sh '''
+            rm -rf venv
 
-        stage('Test') {
-            steps {
-                sh '''
-                    pytest
-                '''
-            }
-        }
+            python3 -m venv venv
 
+            ./venv/bin/python -m pip install --upgrade pip
+
+            ./venv/bin/pip install -r requirements.txt
+        '''
+    }
+}
+
+      stage('Test') {
+    steps {
+        sh '''
+            ./venv/bin/pytest
+        '''
+    }
+}
         stage('Build') {
             steps {
                 script {
